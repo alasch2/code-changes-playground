@@ -1,0 +1,15 @@
+target/
+.classpath
+.project
+.settings/
+*.class
+*.orig
+.idea/
+*.iml
+*.iws
+/local-maven-repo
+/pom.xml.slback
+/buildSessionId.txt
+gen/
+generated/
+test-output/

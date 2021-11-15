@@ -1,0 +1,312 @@
+diff --git a/java-agent-events/src/main/java/io/sealights/onpremise/agentevents/engine/builders/AgentInstanceInfoBuilder.java b/java-agent-events/src/main/java/io/sealights/onpremise/agentevents/engine/builders/AgentInstanceInfoBuilder.java
+index c8ecfd0d..1a1cc39a 100644
+--- a/java-agent-events/src/main/java/io/sealights/onpremise/agentevents/engine/builders/AgentInstanceInfoBuilder.java
++++ b/java-agent-events/src/main/java/io/sealights/onpremise/agentevents/engine/builders/AgentInstanceInfoBuilder.java
+@@ -87,2 +87 @@ class AgentInstanceInfoBuilder extends InfoBuilder<AgentInstanceInfo> implements
+-	private void fillRunInfo() {
+-		data.setCwd(DefaultDirs.WORKING_DIR);
++	protected void fillCmdLineArgs() {
+@@ -90,2 +89,6 @@ class AgentInstanceInfoBuilder extends InfoBuilder<AgentInstanceInfo> implements
+-		data.getArgv().addAll(Arrays.asList(runCmd.split(JVM_ARGS_SEPARATOR)));
+-		
++		if (runCmd != null) {
++			addArguments(Arrays.asList(runCmd.split(JVM_ARGS_SEPARATOR)));
++		}
++	}
++	
++	protected void fillJvmArgs() {
+@@ -93,2 +96,13 @@ class AgentInstanceInfoBuilder extends InfoBuilder<AgentInstanceInfo> implements
+-		List<String> arguments = runtimeMxBean.getInputArguments();
+-		data.getArgv().addAll(arguments);
++		addArguments(runtimeMxBean.getInputArguments());
++	}
++	
++	private void addArguments(List<String> args) {
++		for (String argv : args) {
++			data.getArgv().add(CredentialsMaskFormatter.maskArgValue(argv));
++		}		
++	}
++	
++	private void fillRunInfo() {
++		data.setCwd(DefaultDirs.WORKING_DIR);
++		fillCmdLineArgs();
++		fillJvmArgs();
+diff --git a/java-agent-events/src/test/java/io/sealights/onpremise/agentevents/engine/builders/tests/AgentCiInfoBuilderTest.java b/java-agent-events/src/test/java/io/sealights/onpremise/agentevents/engine/builders/AgentCiInfoBuilderTest.java
+similarity index 97%
+rename from java-agent-events/src/test/java/io/sealights/onpremise/agentevents/engine/builders/tests/AgentCiInfoBuilderTest.java
+rename to java-agent-events/src/test/java/io/sealights/onpremise/agentevents/engine/builders/AgentCiInfoBuilderTest.java
+index 1e8ed9fb..700d6011 100644
+--- a/java-agent-events/src/test/java/io/sealights/onpremise/agentevents/engine/builders/tests/AgentCiInfoBuilderTest.java
++++ b/java-agent-events/src/test/java/io/sealights/onpremise/agentevents/engine/builders/AgentCiInfoBuilderTest.java
+@@ -1 +1 @@
+-package io.sealights.onpremise.agentevents.engine.builders.tests;
++package io.sealights.onpremise.agentevents.engine.builders;
+diff --git a/java-agent-events/src/test/java/io/sealights/onpremise/agentevents/engine/builders/tests/AgentStartInfoBuilderTest.java b/java-agent-events/src/test/java/io/sealights/onpremise/agentevents/engine/builders/AgentStartInfoBuilderTest.java
+similarity index 97%
+rename from java-agent-events/src/test/java/io/sealights/onpremise/agentevents/engine/builders/tests/AgentStartInfoBuilderTest.java
+rename to java-agent-events/src/test/java/io/sealights/onpremise/agentevents/engine/builders/AgentStartInfoBuilderTest.java
+index 76d67e4a..3773f7ed 100644
+--- a/java-agent-events/src/test/java/io/sealights/onpremise/agentevents/engine/builders/tests/AgentStartInfoBuilderTest.java
++++ b/java-agent-events/src/test/java/io/sealights/onpremise/agentevents/engine/builders/AgentStartInfoBuilderTest.java
+@@ -1,6 +1 @@
+-package io.sealights.onpremise.agentevents.engine.builders.tests;
+-
+-import static org.junit.Assert.assertEquals;
+-import static org.junit.Assert.assertFalse;
+-import static org.junit.Assert.assertNotNull;
+-import static org.junit.Assert.assertTrue;
++package io.sealights.onpremise.agentevents.engine.builders;
+@@ -13 +8,5 @@ import org.junit.Test;
+-import io.sealights.onpremise.agentevents.engine.builders.AgentStartInfoBuilder;
++import static org.junit.Assert.assertEquals;
++import static org.junit.Assert.assertFalse;
++import static org.junit.Assert.assertNotNull;
++import static org.junit.Assert.assertTrue;
++
+diff --git a/java-agent-git/src/main/java/io/sealights/onpremise/agents/infra/git/cli/commands/GitDiffsCliCommand.java b/java-agent-git/src/main/java/io/sealights/onpremise/agents/infra/git/cli/commands/GitDiffsCliCommand.java
+index 6f4ee254..6a8830f8 100644
+--- a/java-agent-git/src/main/java/io/sealights/onpremise/agents/infra/git/cli/commands/GitDiffsCliCommand.java
++++ b/java-agent-git/src/main/java/io/sealights/onpremise/agents/infra/git/cli/commands/GitDiffsCliCommand.java
+@@ -69,2 +69 @@ public class GitDiffsCliCommand extends GitDataDiscoveryCliCommand {
+-    		LOG.debug("git-diff-cli output ({} lines): {}", getCliOutput().size(), toStringCliOuptput());
+-    		getGitWorkMonitor().addDebug(String.format("git-diff-cli output: %s", toStringCliOuptput()));
++    		getGitWorkMonitor().addDebug(String.format("GIT-DIF: cli output (%s lines): %s", getCliOutput().size(), toStringCliOuptput()));
+@@ -72 +71 @@ public class GitDiffsCliCommand extends GitDataDiscoveryCliCommand {
+-    			getGitWorkMonitor().addDebug(String.format("git-diff-cli result details:%s", 
++    			getGitWorkMonitor().addDebug(String.format("git-diff handling resluts:%s", 
+diff --git a/java-agent-git/src/main/java/io/sealights/onpremise/agents/infra/git/cli/commands/GitLogCliCommand.java b/java-agent-git/src/main/java/io/sealights/onpremise/agents/infra/git/cli/commands/GitLogCliCommand.java
+index 09dd4e80..be48097b 100644
+--- a/java-agent-git/src/main/java/io/sealights/onpremise/agents/infra/git/cli/commands/GitLogCliCommand.java
++++ b/java-agent-git/src/main/java/io/sealights/onpremise/agents/infra/git/cli/commands/GitLogCliCommand.java
+@@ -91,3 +90,0 @@ public class GitLogCliCommand extends GitDataDiscoveryCliCommand {
+-		if (currentCommitIndex == 0) {
+-			gitData().setHeadCommit(commitParseData.getCommit());
+-		}
+@@ -136,0 +134 @@ public class GitLogCliCommand extends GitDataDiscoveryCliCommand {
++    		getGitWorkMonitor().addDebug(String.format("GIT_LOG: cli output (%s lines): %s", getCliOutput().size(), toStringCliOuptput()));
+@@ -146,2 +144 @@ public class GitLogCliCommand extends GitDataDiscoveryCliCommand {
+-    		.append(String.format("%nignored files:%s", getGitDiscoveryData().getDebugData().getIgnoredInLogFiles()))
+-    		.append(String.format("%ngit-diff-cli output (%s lines): %s", getCliOutput().size(), toStringCliOuptput()));
++    		.append(String.format("%nignored files:%s", getGitDiscoveryData().getDebugData().getIgnoredInLogFiles()));
+diff --git a/java-agent-git/src/main/java/io/sealights/onpremise/agents/infra/git/controller/CollectGitDataStep.java b/java-agent-git/src/main/java/io/sealights/onpremise/agents/infra/git/controller/CollectGitDataStep.java
+index 434b2d90..7ea45788 100644
+--- a/java-agent-git/src/main/java/io/sealights/onpremise/agents/infra/git/controller/CollectGitDataStep.java
++++ b/java-agent-git/src/main/java/io/sealights/onpremise/agents/infra/git/controller/CollectGitDataStep.java
+@@ -5 +4,0 @@ import static io.sealights.onpremise.agents.infra.git.utils.GitUtils.shortId;
+-import org.eclipse.jgit.revwalk.RevCommit;
+@@ -92 +91,9 @@ public class CollectGitDataStep extends GitWorkProcStep<GitData, CollectGitDataS
+-		if (refCommitData.getCommit() != null  && !refCommitData.isSendFullData()) {
++		if (refCommitData.isSendFullData()) {
++			getGitWorkMonitor().addInfo(COLLECT_FOR_REGULAR_BUILD_MSG + "collecting full files tree without diffs", true);
++			collectFullFilesTree();
++			return;
++		}
++		
++		fillHeadCommit();
++		
++		if (refCommitData.getCommit() != null) {
+@@ -97,4 +103,0 @@ public class CollectGitDataStep extends GitWorkProcStep<GitData, CollectGitDataS
+-			if (gitDiscoveryData.getCommitDetails().isEmpty()) {
+-				// Head commit should not be null, even if no new commits were found
+-				setHeadCommit(refCommitData.getCommit());
+-			}
+@@ -102 +105 @@ public class CollectGitDataStep extends GitWorkProcStep<GitData, CollectGitDataS
+-		}
++		}		
+@@ -104,16 +107,4 @@ public class CollectGitDataStep extends GitWorkProcStep<GitData, CollectGitDataS
+-			if (!refCommitData.isSendFullData()) {
+-				getGitWorkMonitor().addInfo(
+-						COLLECT_FOR_REGULAR_BUILD_MSG + "collecting HEAD commit only" + NO_REF_COMMIT_MSG,
+-						true);
+-				RevCommit headCommit = getCommandFactory().createGitHeadCommitCommand(getGitRepo()).run();
+-				if (headCommit != null) {				
+-					setRefCommit(headCommit.getName());
+-				}
+-				else {
+-					getGitWorkMonitor().addWarning(COLLECT_FOR_REGULAR_BUILD_MSG + "HEAD commit was not found" + NO_REF_COMMIT_MSG);
+-				}
+-			}
+-			else {
+-				getGitWorkMonitor().addInfo(COLLECT_FOR_REGULAR_BUILD_MSG + "collecting full files tree without diffs", true);
+-				collectFullFilesTree();
+-			}
++			getGitWorkMonitor().addInfo(
++					COLLECT_FOR_REGULAR_BUILD_MSG + "collecting HEAD commit only" + NO_REF_COMMIT_MSG,
++					true);
++			setRefCommit(getData().getHeadCommit());
+@@ -141,0 +133,10 @@ public class CollectGitDataStep extends GitWorkProcStep<GitData, CollectGitDataS
++	protected void fillHeadCommit() {
++		String headCommit = getCommandFactory().createGitHeadCommitCommand(getGitRepo()).run();
++		if (headCommit == null) {				
++			getGitWorkMonitor().addWarning(COLLECT_FOR_REGULAR_BUILD_MSG + "HEAD commit was not found" + NO_REF_COMMIT_MSG);
++		}
++		else {			
++			setHeadCommit(headCommit);
++		}		
++	}
++	
+diff --git a/java-agent-git/src/main/java/io/sealights/onpremise/agents/infra/git/jgit/commands/GitHeadCommitCommand.java b/java-agent-git/src/main/java/io/sealights/onpremise/agents/infra/git/jgit/commands/GitHeadCommitCommand.java
+index dc322d28..1842474f 100644
+--- a/java-agent-git/src/main/java/io/sealights/onpremise/agents/infra/git/jgit/commands/GitHeadCommitCommand.java
++++ b/java-agent-git/src/main/java/io/sealights/onpremise/agents/infra/git/jgit/commands/GitHeadCommitCommand.java
+@@ -2,0 +3 @@ package io.sealights.onpremise.agents.infra.git.jgit.commands;
++import org.eclipse.jgit.api.LogCommand;
+@@ -4 +4,0 @@ import org.eclipse.jgit.revwalk.RevCommit;
+-import org.eclipse.jgit.revwalk.filter.RevFilter;
+@@ -10 +9,0 @@ import io.sealights.onpremise.agents.infra.logging.LogFactory;
+-import lombok.SneakyThrows;
+@@ -12 +11 @@ import lombok.SneakyThrows;
+-public class GitHeadCommitCommand extends GitCommand<RevCommit> {
++public class GitHeadCommitCommand extends GitCommand<String> {
+@@ -21,2 +20 @@ public class GitHeadCommitCommand extends GitCommand<RevCommit> {
+-	@SneakyThrows
+-	protected RevCommit collectData() {
++	protected String collectData() {
+@@ -24,2 +22,6 @@ public class GitHeadCommitCommand extends GitCommand<RevCommit> {
+-		Iterable<RevCommit> history = getOneLogEntry();
+-		return history.iterator().next();
++		RevCommit headCommit = getHeadLogEntry();
++		if (headCommit != null) {
++			LOG.info("found head commit {}", headCommit.getName());
++			return headCommit.getName();
++		}
++		return null;
+@@ -28,3 +30,15 @@ public class GitHeadCommitCommand extends GitCommand<RevCommit> {
+-	@SneakyThrows
+-	private Iterable<RevCommit> getOneLogEntry() {
+-		return getGit().log().setMaxCount(1).setRevFilter(RevFilter.NO_MERGES).call();
++	private RevCommit getHeadLogEntry() {
++		RevCommit headCommit = null;
++		Iterable<RevCommit> gitLog;
++		try {
++			LogCommand logCmd = getGit().log().setMaxCount(1);
++			gitLog = logCmd.call();
++			for (RevCommit revCommit: gitLog) {
++				headCommit = revCommit;
++				break;
++			} 
++		}
++		catch (Exception e) {
++			// Exception may be thrown even if git have no commits
++		}
++		return headCommit;
+diff --git a/java-agent-git/src/test/java/io/sealights/onpremise/agents/infra/git/cli/commands/GitLogCliCommandTest.java b/java-agent-git/src/test/java/io/sealights/onpremise/agents/infra/git/cli/commands/GitLogCliCommandTest.java
+index a46ae237..df8889bc 100644
+--- a/java-agent-git/src/test/java/io/sealights/onpremise/agents/infra/git/cli/commands/GitLogCliCommandTest.java
++++ b/java-agent-git/src/test/java/io/sealights/onpremise/agents/infra/git/cli/commands/GitLogCliCommandTest.java
+@@ -138 +137,0 @@ public class GitLogCliCommandTest extends GitDataDiscoveryCliCommandTestBase<Git
+-		assertEquals(COMMIT, gitData.getGitData().getHeadCommit());
+diff --git a/java-agent-git/src/test/java/io/sealights/onpremise/agents/infra/git/controller/BuildSessionCreator.java b/java-agent-git/src/test/java/io/sealights/onpremise/agents/infra/git/controller/BuildSessionCreator.java
+index 2d74bb55..9534c95b 100644
+--- a/java-agent-git/src/test/java/io/sealights/onpremise/agents/infra/git/controller/BuildSessionCreator.java
++++ b/java-agent-git/src/test/java/io/sealights/onpremise/agents/infra/git/controller/BuildSessionCreator.java
+@@ -5 +5 @@ import io.sealights.onpremise.agents.infra.types.BuildSessionData.BuildSessionTy
+-import io.sealights.onpremise.agents.infra.types.BuildSessionData.PullRequestParams;
++import io.sealights.onpremise.agents.infra.types.PullRequestParams;
+diff --git a/java-agent-git/src/test/java/io/sealights/onpremise/agents/infra/git/controller/CollectGitDataStepTest.java b/java-agent-git/src/test/java/io/sealights/onpremise/agents/infra/git/controller/CollectGitDataStepTest.java
+index f73b8436..dd841935 100644
+--- a/java-agent-git/src/test/java/io/sealights/onpremise/agents/infra/git/controller/CollectGitDataStepTest.java
++++ b/java-agent-git/src/test/java/io/sealights/onpremise/agents/infra/git/controller/CollectGitDataStepTest.java
+@@ -14,2 +14 @@ import static org.mockito.Matchers.any;
+-import static org.testng.Assert.assertEquals;
+-import static org.testng.Assert.assertNotNull;
++import static org.junit.Assert.assertEquals;
+@@ -20,0 +20 @@ import io.sealights.onpremise.agents.infra.git.configuration.GitWorkConfiguratio
++import io.sealights.onpremise.agents.infra.git.jgit.commands.GitHeadCommitCommand;
+@@ -29,0 +30 @@ public class CollectGitDataStepTest extends GitControllerTestBase {
++	private static String HEAD_COMMIT = "34567gg";
+@@ -44 +45 @@ public class CollectGitDataStepTest extends GitControllerTestBase {
+-		assertNotNull(step.getData().getHeadCommit());
++		assertEquals(HEAD_COMMIT, step.getData().getHeadCommit());
+@@ -55 +56 @@ public class CollectGitDataStepTest extends GitControllerTestBase {
+-		assertNotNull(step.getData().getHeadCommit());
++		assertEquals(HEAD_COMMIT, step.getData().getHeadCommit());
+@@ -79,3 +79,0 @@ public class CollectGitDataStepTest extends GitControllerTestBase {
+-		GitTreeFilesCommand getTreeCmd = mock(GitTreeFilesCommand.class);
+-		when(getTreeCmd.getHeadCommitId()).thenReturn(REF_COMMIT);
+-		when(getTreeCmd.run()).thenReturn(new ModulesMap());
+@@ -84 +82,2 @@ public class CollectGitDataStepTest extends GitControllerTestBase {
+-		when(factory.createGitTreeFilesCommand(any(GitRepo.class))).thenReturn(getTreeCmd);
++		mockGetTree(factory);
++		mockGetHeadCommit(factory);
+@@ -87,0 +87,13 @@ public class CollectGitDataStepTest extends GitControllerTestBase {
++	
++	private void mockGetTree(GitCommandFactory factory) {
++		GitTreeFilesCommand getTreeCmd = mock(GitTreeFilesCommand.class);
++		when(getTreeCmd.getHeadCommitId()).thenReturn(HEAD_COMMIT);
++		when(getTreeCmd.run()).thenReturn(new ModulesMap());		
++		when(factory.createGitTreeFilesCommand(any(GitRepo.class))).thenReturn(getTreeCmd);
++	}
++	
++	private void mockGetHeadCommit(GitCommandFactory factory) {
++		GitHeadCommitCommand headCommitCmd = mock(GitHeadCommitCommand.class);
++		when(factory.createGitHeadCommitCommand(any(GitRepo.class))).thenReturn(headCommitCmd);
++		when(headCommitCmd.run()).thenReturn(HEAD_COMMIT);
++	}
+diff --git a/java-agent-git/src/test/java/io/sealights/onpremise/agents/infra/git/controller/PrepareBSDataStepTest.java b/java-agent-git/src/test/java/io/sealights/onpremise/agents/infra/git/controller/PrepareBSDataStepTest.java
+index bd73f98f..56a7f57a 100644
+--- a/java-agent-git/src/test/java/io/sealights/onpremise/agents/infra/git/controller/PrepareBSDataStepTest.java
++++ b/java-agent-git/src/test/java/io/sealights/onpremise/agents/infra/git/controller/PrepareBSDataStepTest.java
+@@ -21 +21 @@ import io.sealights.onpremise.agents.infra.types.BuildSessionData;
+-import io.sealights.onpremise.agents.infra.types.BuildSessionData.PullRequestParams;
++import io.sealights.onpremise.agents.infra.types.PullRequestParams;
+diff --git a/java-agent-http-client/src/main/java/io/sealights/onpremise/agents/infra/http/api/HttpClientLogFormatter.java b/java-agent-http-client/src/main/java/io/sealights/onpremise/agents/infra/http/api/HttpClientLogFormatter.java
+index c1f11019..c0b39cb6 100644
+--- a/java-agent-http-client/src/main/java/io/sealights/onpremise/agents/infra/http/api/HttpClientLogFormatter.java
++++ b/java-agent-http-client/src/main/java/io/sealights/onpremise/agents/infra/http/api/HttpClientLogFormatter.java
+@@ -36,2 +35,0 @@ public class HttpClientLogFormatter {
+-		//TEMP
+-		printable = bodyJson;
+diff --git a/java-agent-infra-service-proxies/src/main/java/io/sealights/onpremise/agents/infra/serviceproxy/buildsession/BuildSessionCreateData.java b/java-agent-infra-service-proxies/src/main/java/io/sealights/onpremise/agents/infra/serviceproxy/buildsession/BuildSessionCreateData.java
+index aba74742..7c69da89 100644
+--- a/java-agent-infra-service-proxies/src/main/java/io/sealights/onpremise/agents/infra/serviceproxy/buildsession/BuildSessionCreateData.java
++++ b/java-agent-infra-service-proxies/src/main/java/io/sealights/onpremise/agents/infra/serviceproxy/buildsession/BuildSessionCreateData.java
+@@ -23 +22,0 @@ public class BuildSessionCreateData extends BuildSessionData {
+-		super.setBuildSessionType(BUILD);
+@@ -24,0 +24 @@ public class BuildSessionCreateData extends BuildSessionData {
++		setBuildSessionType(BUILD);
+@@ -33 +33,5 @@ public class BuildSessionCreateData extends BuildSessionData {
+-		super.setBuildSessionType(PULLREQUEST);
++		setBuildSessionType(PULLREQUEST);
++	}
++
++	@Override
++	public String toString() {
+diff --git a/java-agent-infra-service-proxies/src/test/java/io/sealights/onpremise/agents/infra/serviceproxy/buildsession/BuildSessionServiceProxyTest.java b/java-agent-infra-service-proxies/src/test/java/io/sealights/onpremise/agents/infra/serviceproxy/buildsession/BuildSessionServiceProxyTest.java
+index 4f2126bf..a003de9c 100644
+--- a/java-agent-infra-service-proxies/src/test/java/io/sealights/onpremise/agents/infra/serviceproxy/buildsession/BuildSessionServiceProxyTest.java
++++ b/java-agent-infra-service-proxies/src/test/java/io/sealights/onpremise/agents/infra/serviceproxy/buildsession/BuildSessionServiceProxyTest.java
+@@ -3,5 +2,0 @@ package io.sealights.onpremise.agents.infra.serviceproxy.buildsession;
+-import static org.testng.Assert.assertEquals;
+-import static org.testng.Assert.assertFalse;
+-import static org.testng.Assert.assertNotNull;
+-import static org.testng.Assert.assertNull;
+-
+@@ -35,0 +31 @@ import io.sealights.onpremise.agents.infra.http.client.SLHttpClientMockUtils;
++import io.sealights.onpremise.agents.infra.types.AdditionalArgumentsData;
+@@ -42,0 +39,4 @@ public class BuildSessionServiceProxyTest extends ServiceProxyTestBase {
++	private static final String APP = "app";
++	private static final String BUILD = "build";
++	private static final String BRANCH = "branch";
++	private static final String INCLUDES = "include*";
+diff --git a/java-agent-infra/src/main/java/io/sealights/onpremise/agents/infra/utils/StringUtils.java b/java-agent-infra/src/main/java/io/sealights/onpremise/agents/infra/utils/StringUtils.java
+index 34e0908e..e6c0dde1 100644
+--- a/java-agent-infra/src/main/java/io/sealights/onpremise/agents/infra/utils/StringUtils.java
++++ b/java-agent-infra/src/main/java/io/sealights/onpremise/agents/infra/utils/StringUtils.java
+@@ -134,0 +135,3 @@ public final class StringUtils {
++	/**
++	 * Removed any \r and splits to lines by \n chars
++	 */
+@@ -137,2 +140,2 @@ public final class StringUtils {
+-			original.replace(END_R, EMPTY_STRING);
+-			String[] lines = original.split(REPLACE_END_N_PATTERN);
++			String temp = original.replace(END_R, EMPTY_STRING);
++			String[] lines = temp.split(REPLACE_END_N_PATTERN);
+diff --git a/java-agent-infra/src/test/java/io/sealights/onpremise/agents/infra/tests/utils/StringUtilsTest.java b/java-agent-infra/src/test/java/io/sealights/onpremise/agents/infra/tests/utils/StringUtilsTest.java
+index c6ae08d8..60a38a49 100644
+--- a/java-agent-infra/src/test/java/io/sealights/onpremise/agents/infra/tests/utils/StringUtilsTest.java
++++ b/java-agent-infra/src/test/java/io/sealights/onpremise/agents/infra/tests/utils/StringUtilsTest.java
+@@ -212,0 +213,3 @@ public class StringUtilsTest {
++			for (String l: lines) {
++				assertFalse(l.contains(END_R), String.format("wrong line:[%s]", l));
++			}
